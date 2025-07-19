@@ -10,4 +10,4 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - PYTHONUNBUFFERED=1
-    restart: unless-stopped
+    restart: always

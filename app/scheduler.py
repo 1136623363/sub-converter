@@ -1,6 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from models import Subscription, db
-from .converter import fetch_subscription
+from converter import fetch_subscription
 
 def update_all_subscriptions(app):
     with app.app_context():

@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from .models import db, Subscription, Config
-from .converter import generate_clash_config, generate_shadowrocket_config
-from .scheduler import init_scheduler
+from models import db, Subscription, Config
+from converter import generate_clash_config, generate_shadowrocket_config
+from scheduler import init_scheduler
 import os
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///D:/Desktop/sub-converter/app/data/subscriptions.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app/data/subscriptions.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     db.init_app(app)
@@ -15,8 +15,8 @@ def create_app():
         db.create_all()
         init_scheduler(app)
         # 启动时自动更新一次所有订阅
-        from .converter import fetch_subscription
-        from .models import Subscription
+        from converter import fetch_subscription
+        from models import Subscription
         subs = Subscription.query.all()
         for sub in subs:
             try:
@@ -58,7 +58,7 @@ def create_app():
             db.session.add(sub)
             db.session.commit()
             # 添加后立即更新订阅内容
-            from .converter import fetch_subscription
+            from converter import fetch_subscription
             try:
                 fetch_subscription(sub.url)
             except Exception as e:
@@ -99,7 +99,7 @@ def create_app():
     @app.route('/update/<int:id>')
     def update_subscription(id):
         sub = Subscription.query.get_or_404(id)
-        from .converter import fetch_subscription
+        from converter import fetch_subscription
         try:
             fetch_subscription(sub.url)
         except Exception as e:

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>订阅链接</h1>
+
+<div class="card mt-4">
+    <div class="card-header">
+        统一订阅链接
+    </div>
+    <div class="card-body">
+        <input type="text" class="form-control" value="{{ sub_url }}" readonly>
+        <button class="btn btn-secondary mt-2" onclick="copyToClipboard('{{ sub_url }}')">复制链接</button>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('链接已复制到剪贴板');
+    });
+}
+</script>
+
+<div class="mt-4">
+    <a href="/" class="btn btn-primary">返回首页</a>
+</div>
+{% endblock %}

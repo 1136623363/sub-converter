@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <button class="btn btn-outline-success me-2" id="copySub">一键复制订阅链接</button>
+  </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">添加订阅</button>
+</div>
+<input type="text" id="subUrlHidden" value="{{ request.url_root }}sub" style="position:absolute;left:-9999px;">
+
+<!-- 添加订阅弹窗（仅一处，带loading动画） -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">添加订阅</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addSubForm">
+          <div class="mb-3">
+            <label for="subName" class="form-label">名称</label>
+            <input type="text" class="form-control" id="subName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="subUrl" class="form-label">订阅URL</label>
+            <input type="url" class="form-control" id="subUrl" name="url" required>
+          </div>
+          <button type="submit" class="btn btn-primary">提交</button>
+          <div id="addLoading" class="mt-2" style="display:none;">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+            <span class="ms-2">正在添加并更新订阅...</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('addSubForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('subName').value;
+    const url = document.getElementById('subUrl').value;
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('url', url);
+    const resp = await fetch('/add', {
+        method: 'POST',
+        body: formData
+    });
+    if (resp.redirected) {
+        window.location = resp.url;
+    } else {
+        const text = await resp.text();
+        alert('添加失败：' + text);
+    }
+};
+</script>
+
+
+<hr>
+
+
+<hr>
+<h5>Clash订阅</h5>
+<table class="table table-striped mt-2">
+    <thead>
+        <tr>
+            <th>名称</th>
+            <th>URL</th>
+            <th>最后更新时间</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sub in subscriptions if sub.type == 'clash' %}
+        <tr>
+            <td>{{ sub.name }}</td>
+            <td class="text-truncate" style="max-width: 300px;">{{ sub.url }}</td>
+            <td>
+                {% if sub.last_update %}
+                    {{ sub.last_update.strftime('%Y-%m-%d %H:%M:%S') }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                <a href="/raw/{{ sub.id }}" class="btn btn-info btn-sm" target="_blank">查看原始内容</a>
+                <a href="/update/{{ sub.id }}" class="btn btn-warning btn-sm ms-2">手动更新</a>
+                <button class="btn btn-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#editModal{{ sub.id }}">编辑</button>
+                <button class="btn btn-danger btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ sub.id }}">删除</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h5 class="mt-4">Shadowrocket订阅</h5>
+<table class="table table-striped mt-2">
+    <thead>
+        <tr>
+            <th>名称</th>
+            <th>URL</th>
+            <th>最后更新时间</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sub in subscriptions if sub.type == 'shadowrocket' %}
+        <tr>
+            <td>{{ sub.name }}</td>
+            <td class="text-truncate" style="max-width: 300px;">{{ sub.url }}</td>
+            <td>
+                {% if sub.last_update %}
+                    {{ sub.last_update.strftime('%Y-%m-%d %H:%M:%S') }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                <a href="/raw/{{ sub.id }}" class="btn btn-info btn-sm" target="_blank">查看原始内容</a>
+                <a href="/update/{{ sub.id }}" class="btn btn-warning btn-sm ms-2">手动更新</a>
+                <button class="btn btn-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#editModal{{ sub.id }}">编辑</button>
+                <button class="btn btn-danger btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ sub.id }}">删除</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 编辑订阅弹窗（每行一个） -->
+{% for sub in subscriptions %}
+<div class="modal fade" id="editModal{{ sub.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ sub.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel{{ sub.id }}">编辑订阅</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form class="editSubForm" data-id="{{ sub.id }}">
+          <div class="mb-3">
+            <label class="form-label">名称</label>
+            <input type="text" class="form-control" name="name" value="{{ sub.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">订阅URL</label>
+            <input type="url" class="form-control" name="url" value="{{ sub.url }}" required>
+          </div>
+          <button type="submit" class="btn btn-primary">保存修改</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+// 复制订阅链接
+document.getElementById('copySub').onclick = function() {
+  const subUrl = document.getElementById('subUrlHidden').value;
+  navigator.clipboard.writeText(subUrl).then(() => {
+    showToast('订阅链接已复制');
+  });
+};
+
+// 居中提示弹窗
+function showToast(msg) {
+  let toast = document.getElementById('copyToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'copyToast';
+    toast.className = 'toast align-items-center text-bg-success border-0 position-fixed top-50 start-50 translate-middle';
+    toast.style.zIndex = 9999;
+    toast.innerHTML = '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+    document.body.appendChild(toast);
+  }
+  toast.querySelector('.toast-body').textContent = msg;
+  const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
+  bsToast.show();
+}
+// 添加订阅
+document.getElementById('addSubForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('subName').value;
+    const url = document.getElementById('subUrl').value;
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('url', url);
+    document.getElementById('addLoading').style.display = '';
+    const resp = await fetch('/add', {
+        method: 'POST',
+        body: formData
+    });
+    document.getElementById('addLoading').style.display = 'none';
+    if (resp.redirected) {
+        window.location = resp.url;
+    } else {
+        const text = await resp.text();
+        alert('添加失败：' + text);
+    }
+};
+
+// 编辑订阅
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.editSubForm').forEach(form => {
+        form.onsubmit = async function(e) {
+            e.preventDefault();
+            const id = form.getAttribute('data-id');
+            const formData = new FormData(form);
+            const resp = await fetch(`/edit/${id}`, {
+                method: 'POST',
+                body: formData
+            });
+            if (resp.redirected) {
+                window.location = resp.url;
+            } else {
+                const text = await resp.text();
+                alert('修改失败：' + text);
+            }
+        };
+    });
+
+    // 手动更新按钮AJAX化
+    document.querySelectorAll('a.btn-warning').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const url = btn.getAttribute('href');
+            btn.disabled = true;
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 更新中';
+            try {
+                const resp = await fetch(url);
+                if (resp.redirected) {
+                    window.location = resp.url;
+                } else if (resp.status === 200) {
+                    window.location.reload();
+                } else {
+                    const text = await resp.text();
+                    alert('更新失败：' + text);
+                }
+            } catch (err) {
+                alert('网络错误');
+            }
+            btn.disabled = false;
+            btn.innerHTML = oldText;
+        });
+    });
+});
+</script>
+{% endblock %}

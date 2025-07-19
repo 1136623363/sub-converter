@@ -17,4 +17,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # gunicorn启动包内app，需指定包路径
+RUN mkdir -p /app/app/data
 CMD ["gunicorn", "--chdir", "app", "-b", "0.0.0.0:5000", "app:create_app()"]

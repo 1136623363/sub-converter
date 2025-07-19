@@ -44,7 +44,7 @@ def detect_subscription_type(content):
 
 
 from flask import Response
-from .models import db, Subscription
+from models import db, Subscription
 import requests
 import yaml
 from bs4 import BeautifulSoup
@@ -54,7 +54,7 @@ import json
 import re
 
 def fetch_subscription(url):
-    from .models import Subscription, db
+    from models import Subscription, db
     # 兼容传入Subscription对象或url字符串
     if isinstance(url, Subscription):
         sub = url
